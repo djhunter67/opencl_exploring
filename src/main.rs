@@ -71,15 +71,15 @@ fn trivial() -> ocl::Result<()> {
             .join("\n")
     );
 
-    let platform = platforms
-        .into_iter()
-        .find(|p| p.name().expect("No name").contains("NVIDIA"))
-        .expect("No NVIDIA platform found");
+    // let platform = platforms
+    // .into_iter()
+    // .find(|p| p.name().expect("No name").contains("NVIDIA"))
+    // .expect("No NVIDIA platform found");
 
-    // let platform = Platform::list()
-    //     .into_iter()
-    //     .find(|p| p.name().expect("No name").contains("Intel"))
-    //     .expect("No Intel platform found");
+    let platform = Platform::list()
+        .into_iter()
+        .find(|p| p.name().expect("No name").contains("Intel"))
+        .expect("No Intel platform found");
 
     println!("\n\nUsing platform: {}", platform.name()?);
 
@@ -140,3 +140,123 @@ fn trivial() -> ocl::Result<()> {
     println!("The value at index [{}] is now '{}'!", 27, vec[27]);
     Ok(())
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+// fn matrix_ops() -> Result<(), ocl::Error> {							        //
+//     Load the OpenCL kernel from a file							        //
+//     let kernel_src =										        //
+//         fs::read_to_string(path::Path::new("matrix_ops.cl")).expect("Failed to read kernel file");   //
+// 												        //
+//     Initialize OpenCL context								        //
+//     let platforms = ocl::Platform::list().unwrap();						        //
+//     let platform = platforms.first().unwrap();						        //
+//     let devices = platform.devices().unwrap();						        //
+//     let device = devices.first().unwrap();							        //
+// 												        //
+//     let ctx = ocl::Context::builder()							        //
+//         .platform(platform)									        //
+//         .devices(&[device])									        //
+//         .build()										        //
+//         .unwrap();										        //
+// 												        //
+//     Create command queue									        //
+//     let queue = ocl::Queue::new(&ctx, &device).unwrap();					        //
+// 												        //
+//     Matrix size (for simplicity, using 2x2 matrices)						        //
+//     const SIZE: i32 = 2;									        //
+// 												        //
+//     Example stiffness matrix K and damping matrix C for a simple system			        //
+//     These matrices are placeholders; replace with real-world matrices as needed		        //
+//     let k_matrix: Vec<f32> = vec![20.0, -10.0, -10.0, 20.0];					        //
+// 												        //
+//     let c_matrix: Vec<f32> = vec![5.0, -2.0, -2.0, 5.0];					        //
+// 												        //
+//     Initial guess for eigenvalue (lambda) and eigenvector (x)				        //
+//     let mut lambda: f32 = 1.0;								        //
+//     let mut x: Vec<f32> = vec![1.0, 1.0];							        //
+// 												        //
+//     OpenCL buffer creation									        //
+//     let a_buffer = unsafe {									        //
+//         ocl::Buffer::new(									        //
+//             &ctx,										        //
+//             ocl::MemoryFlags::empty(),							        //
+//             k_matrix.len() as usize,								        //
+//             None::<f32>,									        //
+//         )											        //
+//     }											        //
+//     .unwrap();										        //
+//     let x_buffer = ocl::Buffer::new(&ctx, ocl::MemoryFlags::empty(), x.len(), None::<f32>).unwrap(); //
+//     let y_buffer = ocl::Buffer::new(&ctx, ocl::MemoryFlags::empty(), x.len(), None::<f32>).unwrap(); //
+//     let residual_buffer =									        //
+//         ocl::Buffer::new(&ctx, ocl::MemoryFlags::empty(), x.len(), None::<f32>).unwrap();	        //
+// 												        //
+//     Write data to buffers									        //
+//     queue											        //
+//         .write_buffer(&a_buffer, 0, &k_matrix)						        //
+//         .enqueue()										        //
+//         .unwrap();										        //
+//     queue.write_buffer(&x_buffer, 0, &x).enqueue().unwrap();					        //
+// 												        //
+//     Build the OpenCL program									        //
+//     let mut program = ocl::Program::builder()						        //
+//         .src(kernel_src)									        //
+//         .devices(&[device])									        //
+//         .build(&ctx)										        //
+//         .expect("Failed to build program");							        //
+// 												        //
+//     Create and set kernel arguments for matrix-vector multiplication				        //
+//     let multiply_kernel = program.kernel("multiply_matrix_vector").unwrap();			        //
+// 												        //
+//     let _kernel_args = multiply_kernel							        //
+//         .arg(&a_buffer)									        //
+//         .arg(&x_buffer)									        //
+//         .arg(&y_buffer)									        //
+//         .arg(SIZE);										        //
+// 												        //
+//     Execute the kernel to compute Ax (matrix-vector product)					        //
+//     let global_work_size = [SIZE as usize];							        //
+//     multiply_kernel										        //
+//         .enqueue(&queue, global_work_size, None, &())					        //
+//         .unwrap();										        //
+// 												        //
+//     Read result from y_buffer								        //
+//     let mut ax: Vec<f32> = vec![0.0; SIZE as usize];						        //
+//     queue.read_buffer(&y_buffer, 0, &mut ax).enqueue().unwrap();				        //
+// 												        //
+//     Compute lambda*x (placeholder for actual eigenvalue iteration method)			        //
+//     let mut lambda_x: Vec<f32> = x.iter().map(|val| lambda * val).collect();			        //
+// 												        //
+//     Create and set kernel arguments for residual calculation					        //
+//     let residual_kernel = program.kernel("calculate_residual").unwrap();			        //
+// 												        //
+//     let _residual_args = residual_kernel							        //
+//         .arg(&ax_buffer) Note: Need to write ax into buffer first				        //
+//         .arg(&lambda_x_buffer)								        //
+//         .arg(&residual_buffer)								        //
+//         .arg(SIZE);										        //
+// 												        //
+//     Execute the kernel to compute residual (Ax - lambda*x)					        //
+//     residual_kernel										        //
+//         .enqueue(&queue, global_work_size, None, &())					        //
+//         .unwrap();										        //
+// 												        //
+//     Read residual from buffer								        //
+//     let mut residual: Vec<f32> = vec![0.0; SIZE as usize];					        //
+//     queue											        //
+//         .read_buffer(&residual_buffer, 0, &mut residual)					        //
+//         .enqueue()										        //
+//         .unwrap();										        //
+// 												        //
+//     Process and print results (placeholder for actual eigenvalue update)			        //
+//     println!("Eigenvalue approximation: {}", lambda);					        //
+//     println!("Residual vector: {:?}", residual);						        //
+// 												        //
+//     Cleanup buffers										        //
+//     a_buffer.release();									        //
+//     x_buffer.release();									        //
+//     y_buffer.release();									        //
+//     residual_buffer.release();								        //
+// 												        //
+//     Ok(())											        //
+// }												        //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
