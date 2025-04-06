@@ -45,11 +45,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // }
     }
 
-    trivial()?;
+    trivial(platforms)?;
 
     Ok(())
 }
-fn trivial() -> ocl::Result<()> {
+fn trivial(platforms: Vec<Platform>) -> ocl::Result<()> {
     static KERNEL_SRC: &str = r"
         __kernel void add(__global float* buffer, float scalar) {
             buffer[get_global_id(0)] += scalar;
@@ -60,23 +60,14 @@ fn trivial() -> ocl::Result<()> {
     // (1) Define which platform and device(s) to use. Create a context,
     // queue, and program then define some dims (compare to step 1 above).
 
-    let platforms = Platform::list();
-
-    println!(
-        "\n\nAll platforms:\n{}",
-        platforms
-            .iter()
-            .map(|p| p.name().expect("Failed to get platform name"))
-            .collect::<Vec<_>>()
-            .join("\n")
-    );
+    // let platforms = Platform::list();
 
     // let platform = platforms
     // .into_iter()
     // .find(|p| p.name().expect("No name").contains("NVIDIA"))
     // .expect("No NVIDIA platform found");
 
-    let platform = Platform::list()
+    let platform = platforms
         .into_iter()
         .find(|p| p.name().expect("No name").contains("Intel"))
         .expect("No Intel platform found");
