@@ -39,10 +39,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .expect("Failed to get device versions")
             );
         });
-
-        // for extend in platform.extensions()?.iter() {
-        // println!("  Extension: {extend}");
-        // }
     }
 
     trivial(platforms)?;
@@ -60,17 +56,25 @@ fn trivial(platforms: Vec<Platform>) -> ocl::Result<()> {
     // (1) Define which platform and device(s) to use. Create a context,
     // queue, and program then define some dims (compare to step 1 above).
 
-    // let platforms = Platform::list();
-
     // let platform = platforms
     // .into_iter()
     // .find(|p| p.name().expect("No name").contains("NVIDIA"))
     // .expect("No NVIDIA platform found");
 
-    let platform = platforms
-        .into_iter()
-        .find(|p| p.name().expect("No name").contains("Intel"))
-        .expect("No Intel platform found");
+    #[allow(clippy::manual_let_else)]
+    let platform = match platforms.into_iter().find(|p| {
+        p.name()
+            .expect("No name")
+            .to_uppercase()
+            .contains(&HWChoice::CPU.to_string())
+        // .contains("Intel")
+    }) {
+        Some(p) => p,
+        None => {
+            println!("\nNo Intel platform found");
+            return Err(ocl::Error::from("No Intel platform found"));
+        }
+    };
 
     println!("\n\nUsing platform: {}", platform.name()?);
 
@@ -87,12 +91,8 @@ fn trivial(platforms: Vec<Platform>) -> ocl::Result<()> {
         .src(KERNEL_SRC)
         .build(&context)?;
     let queue = Queue::new(&context, *device, None)?;
-    // let dims = 1 << 20; //1 << 20 = 2^20 = 1048576
-    let dims = 1 << 7;
-    // [NOTE]: At this point we could manually assemble a ProQue by calling:
-    // `ProQue::new(context, queue, program, Some(dims))`. One might want to
-    // do this when only one program and queue are all that's needed. Wrapping
-    // it up into a single struct makes passing it around simpler.
+    //1 << 20 = 2^20 = 1048576
+    let dims = 1 << 20;
 
     // (2) Create a `Buffer`:
     let buffer = Buffer::<f32>::builder()
@@ -251,3 +251,17 @@ fn trivial(platforms: Vec<Platform>) -> ocl::Result<()> {
 //     Ok(())											        //
 // }												        //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+enum HWChoice {
+    GPU,
+    CPU,
+}
+
+impl std::fmt::Display for HWChoice {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::GPU => write!(f, "NVIDIA"),
+            Self::CPU => write!(f, "INTEL"),
+        }
+    }
+}
